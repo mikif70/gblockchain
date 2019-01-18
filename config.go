@@ -3,7 +3,8 @@ package main
 
 const (
 	MINE_RATE          = 1000
-	INITIAL_DIFFICULTY = 18
+	INITIAL_DIFFICULTY = 22
+	DEBUG              = true
 )
 
 var (

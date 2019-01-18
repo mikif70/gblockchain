@@ -11,10 +11,6 @@ import (
 	"time"
 )
 
-const (
-	DEBUG = true
-)
-
 func cryptoHash(block *Block) []byte {
 	start := time.Now()
 

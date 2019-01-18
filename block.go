@@ -40,18 +40,20 @@ func Genesis() *Block {
 func (b *Block) MineBlock(last *Block, data *Data) *Block {
 	var block *Block
 	var hash []byte
-	var timestamp int
 	var lastHash = last.Hash
 	var difficulty = last.Difficulty
 	var nonce = 0
 
 	for !isHashValid(hash, difficulty) {
 		nonce += 1
-		timestamp = int(time.Now().Unix())
-		difficulty = b.AdjustDifficulty(last, timestamp)
-		block = NewBlock(int(timestamp), lastHash, data, nonce, difficulty)
+		b.Timestamp = int(time.Now().Unix())
+		difficulty = b.AdjustDifficulty(last)
+		fmt.Printf("diff: %d\n", difficulty)
+		block = NewBlock(int(b.Timestamp), lastHash, data, nonce, difficulty)
 		hash = cryptoHash(block)
-		fmt.Printf("hash: %d - %d - %+v\n", nonce, timestamp, hash)
+		if DEBUG {
+			fmt.Printf("hash: %d - %d - %+v\n", nonce, b.Timestamp, hash)
+		}
 	}
 
 	block.Hash = hash
@@ -59,20 +61,24 @@ func (b *Block) MineBlock(last *Block, data *Data) *Block {
 	return block
 }
 
-func (b *Block) AdjustDifficulty(last *Block, timestamp int) int {
+func (b *Block) AdjustDifficulty(last *Block) int {
 
 	var difference int
 
 	difficulty := last.Difficulty
 
 	if difficulty < 1 {
-		fmt.Printf("difference: 0\n")
+		if DEBUG {
+			fmt.Printf("difference: 0\n")
+		}
 		return 1
 	}
 
-	difference = (timestamp - last.Timestamp) * 1000
+	difference = (b.Timestamp - last.Timestamp) * 1000
 
-	fmt.Printf("difference %+v vs %d = %+v\n", difference, MINE_RATE, (difference - MINE_RATE))
+	if DEBUG {
+		fmt.Printf("difference %+v vs %d = %+v\n", difference, MINE_RATE, (difference - MINE_RATE))
+	}
 
 	if difference > MINE_RATE {
 		return (difficulty - 1)
@@ -87,18 +93,21 @@ func isHashValid(hash []byte, difficulty int) bool {
 		return false
 	}
 
-	//	fmt.Printf("h2b: %+v\n", hexToBin(hash))
-
 	zero := strings.Repeat("0", difficulty)
 	hashDif := hash[0:difficulty]
 
 	var hashZero, hashHex string
+
 	for _, b := range hashDif {
 		hashZero += fmt.Sprintf("%08b", b)
-		hashHex += fmt.Sprintf("%02x", b)
+		if DEBUG {
+			hashHex += fmt.Sprintf("%02x", b)
+		}
 	}
 
-	fmt.Printf("Zero: %+v - %+v - %+v\n", zero, hashZero, hashHex)
+	if DEBUG {
+		fmt.Printf("Zero: %+v - %+v - %+v\n", zero, hashZero, hashHex)
+	}
 
 	hashToDiff := hashZero[0:difficulty]
 
