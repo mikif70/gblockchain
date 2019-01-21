@@ -6,17 +6,21 @@ import (
 )
 
 func main() {
-	b := &Block{}
-
 	genesis := Genesis()
 
 	fmt.Printf("Genesis: %+v\n", genesis)
 
-	data := &Data{
+	data := Data{
 		"test": "test",
 	}
 
-	block := b.MineBlock(genesis, data)
+	block := MineBlock(genesis, data)
 
 	fmt.Printf("%+v\n", block)
+
+	chain := NewChain()
+	fmt.Printf("chain: %+v\n", chain)
+
+	chain.addBlock(data)
+	fmt.Printf("newChain: %+v\n", chain)
 }

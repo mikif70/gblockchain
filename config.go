@@ -3,13 +3,13 @@ package main
 
 const (
 	MINE_RATE          = 1000
-	INITIAL_DIFFICULTY = 22
-	DEBUG              = true
+	INITIAL_DIFFICULTY = 10
+	DEBUG              = false
 )
 
 var (
 	GENESIS_DATA = Block{
 		LastHash: []byte{00, 00},
-		Data:     &Data{},
+		Data:     Data{"genesis": "genesis"},
 	}
 )

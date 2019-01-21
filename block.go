@@ -17,11 +17,11 @@ type Block struct {
 	Hash       []byte `json:"hash"`
 	Nonce      int    `json:"nonce"`
 	Difficulty int    `json:"difficulty"`
-	Data       *Data  `json:"data"`
+	Data       Data   `json:"data"`
 }
 
-func NewBlock(timestamp int, lastHash []byte, data *Data, nonce int, difficulty int) *Block {
-	return &Block{
+func NewBlock(timestamp int, lastHash []byte, data Data, nonce int, difficulty int) Block {
+	return Block{
 		Timestamp:  timestamp,
 		LastHash:   lastHash,
 		Hash:       []byte{00, 00},
@@ -31,28 +31,28 @@ func NewBlock(timestamp int, lastHash []byte, data *Data, nonce int, difficulty 
 	}
 }
 
-func Genesis() *Block {
+func Genesis() Block {
 	genesis := NewBlock(int(time.Now().Unix()), GENESIS_DATA.LastHash, GENESIS_DATA.Data, 0, INITIAL_DIFFICULTY)
-	genesis.Hash = cryptoHash(genesis)
+	genesis.Hash = cryptoHash(&genesis)
 	return genesis
 }
 
-func (b *Block) MineBlock(last *Block, data *Data) *Block {
-	var block *Block
+func MineBlock(last Block, data Data) Block {
+	var block Block
 	var hash []byte
 	var lastHash = last.Hash
 	var difficulty = last.Difficulty
 	var nonce = 0
+	var timestamp int
 
 	for !isHashValid(hash, difficulty) {
 		nonce += 1
-		b.Timestamp = int(time.Now().Unix())
-		difficulty = b.AdjustDifficulty(last)
-		fmt.Printf("diff: %d\n", difficulty)
-		block = NewBlock(int(b.Timestamp), lastHash, data, nonce, difficulty)
-		hash = cryptoHash(block)
+		timestamp = int(time.Now().Unix())
+		difficulty = AdjustDifficulty(&last, timestamp)
+		block = NewBlock(int(timestamp), lastHash, data, nonce, difficulty)
+		hash = cryptoHash(&block)
 		if DEBUG {
-			fmt.Printf("hash: %d - %d - %+v\n", nonce, b.Timestamp, hash)
+			fmt.Printf("hash: %d - %d - %+v\n", nonce, timestamp, hash)
 		}
 	}
 
@@ -61,7 +61,7 @@ func (b *Block) MineBlock(last *Block, data *Data) *Block {
 	return block
 }
 
-func (b *Block) AdjustDifficulty(last *Block) int {
+func AdjustDifficulty(last *Block, timestamp int) int {
 
 	var difference int
 
@@ -74,7 +74,7 @@ func (b *Block) AdjustDifficulty(last *Block) int {
 		return 1
 	}
 
-	difference = (b.Timestamp - last.Timestamp) * 1000
+	difference = (timestamp - last.Timestamp) * 1000
 
 	if DEBUG {
 		fmt.Printf("difference %+v vs %d = %+v\n", difference, MINE_RATE, (difference - MINE_RATE))
