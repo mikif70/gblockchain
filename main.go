@@ -6,12 +6,13 @@ import (
 	"log"
 	"os"
 	//	"time"
-	//	ui "github.com/jroimartin/gocui"
+	// "github.com/jroimartin/gocui"
 	//	ui "github.com/gizak/termui"
 )
 
 var (
-	chain *Chain
+	chain   *Chain
+	running = true
 )
 
 func main() {
@@ -43,5 +44,9 @@ func main() {
 	chain.addBlock(data)
 	fmt.Printf("newChain: %+v\n", chain)
 
-	RunConsole()
+	ui := NewConsole()
+
+	go NewListener(ui)
+
+	RunConsole(ui)
 }

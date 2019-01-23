@@ -2,7 +2,7 @@
 package main
 
 const (
-	MINE_RATE          = 1000
+	MINE_RATE          = 3000
 	INITIAL_DIFFICULTY = 10
 	DEBUG              = false
 	REFRESH_TIME       = 10

@@ -11,12 +11,13 @@ import (
 	//ui "github.com/gizak/termui"
 )
 
-func RunConsole() {
+func NewConsole() *gocui.Gui {
+	var err error
+
 	ui, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
 		panic(err)
 	}
-	defer ui.Close()
 
 	//	ui.Highlight = true
 	ui.SelBgColor = gocui.ColorBlue
@@ -29,6 +30,11 @@ func RunConsole() {
 	keyBind(ui)
 	mouseBind(ui)
 
+	return ui
+}
+
+func RunConsole(ui *gocui.Gui) {
+	defer ui.Close()
 	if err := ui.MainLoop(); err != nil && err != gocui.ErrQuit {
 		log.Panicln(err)
 	}
@@ -64,7 +70,7 @@ func mouseBind(ui *gocui.Gui) {
 }
 
 func layout(ui *gocui.Gui) error {
-	var difficulty, blocks, blockchain, data *gocui.View
+	var difficulty, blocks, blockchain, data, net *gocui.View
 	var addButton, synchButton, quitButton *gocui.View
 	var err error
 	maxX, _ := ui.Size()
@@ -102,6 +108,14 @@ func layout(ui *gocui.Gui) error {
 			return err
 		}
 		blocks.Title = "Time"
+	}
+
+	if net, err = ui.SetView("net", 0, 15, 12, 17); err != nil {
+		if err != gocui.ErrUnknownView {
+			return err
+		}
+		net.Title = "Net"
+		fmt.Fprint(net, "ON ==# OFF")
 	}
 
 	if blockchain, err = ui.SetView("blockchain", 18, 0, maxX-1, 18); err != nil {
@@ -174,6 +188,24 @@ func printBlockchain(ui *gocui.Gui) {
 	printNonce(ui)
 	printLastHash(ui)
 	printTime(ui)
+}
+
+func SetNet(status bool, ui *gocui.Gui) {
+	v, err := ui.View("net")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	log.Printf("Status: %v - %s\n", status, v.Buffer())
+
+	if status {
+		v.Clear()
+		fmt.Fprint(v, "ON #== OFF")
+	} else {
+		v.Clear()
+		fmt.Fprint(v, "ON ==# OFF")
+	}
 }
 
 func printTime(ui *gocui.Gui) {
