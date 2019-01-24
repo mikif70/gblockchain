@@ -2,6 +2,37 @@
 package main
 
 import (
+	"encoding/json"
+	"log"
+)
+
+var (
+	UPDATE      = "update"
+	ADD         = "add"
+	MINE        = "mine"
+	BLOCK_FOUND = "found"
+)
+
+type myMsg struct {
+	Cmd  string `json:cmd`
+	Msg  []byte `json:msg`
+	Data []byte `json:data`
+}
+
+func makeMsg(cmd string, data []byte, msg []byte) ([]byte, error) {
+	mymsg := myMsg{
+		Cmd:  cmd,
+		Data: data,
+		Msg:  msg,
+	}
+
+	jmsg, err := json.Marshal(mymsg)
+	log.Printf("jmsg: %+v\n", string(jmsg))
+	return jmsg, err
+}
+
+/*
+import (
 	"bufio"
 	"encoding/json"
 	"fmt"
@@ -9,11 +40,11 @@ import (
 	"net"
 	"strings"
 
-	"github.com/jroimartin/gocui"
+	//	"github.com/jroimartin/gocui"
 	"github.com/secmask/go-redisproto"
 )
 
-func handleConn(conn net.Conn, ui *gocui.Gui) {
+func handleConn(conn net.Conn) {
 	defer conn.Close()
 	parser := redisproto.NewParser(conn)
 	writer := redisproto.NewWriter(bufio.NewWriter(conn))
@@ -26,7 +57,7 @@ func handleConn(conn net.Conn, ui *gocui.Gui) {
 				ew = writer.WriteError(err.Error())
 			} else {
 				log.Println(err, " closed connection to ", conn.RemoteAddr())
-				SetNet(false, ui)
+				SetNet(false)
 				break
 			}
 		} else {
@@ -68,13 +99,13 @@ func handleConn(conn net.Conn, ui *gocui.Gui) {
 		}
 		if ew != nil {
 			log.Println("Connection closed", ew)
-			SetNet(false, ui)
+			SetNet(false)
 			break
 		}
 	}
 }
 
-func NewListener(ui *gocui.Gui) {
+func NewListener() {
 	listener, err := net.Listen("tcp", ":5981")
 	if err != nil {
 		panic(err)
@@ -87,7 +118,8 @@ func NewListener(ui *gocui.Gui) {
 			log.Println("Error on accept: ", err)
 			continue
 		}
-		SetNet(true, ui)
-		go handleConn(conn, ui)
+		SetNet(true)
+		go handleConn(conn)
 	}
 }
+*/

@@ -2,6 +2,7 @@ package main
 
 import (
 	//	"math/rand"
+	//	"encoding/json"
 	"fmt"
 	"log"
 
@@ -11,17 +12,22 @@ import (
 	//ui "github.com/gizak/termui"
 )
 
-func NewConsole() *gocui.Gui {
+var (
+	ui *gocui.Gui
+)
+
+func RunConsole() {
 	var err error
 
-	ui, err := gocui.NewGui(gocui.OutputNormal)
+	ui, err = gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
 		panic(err)
 	}
+	defer ui.Close()
 
 	//	ui.Highlight = true
-	ui.SelBgColor = gocui.ColorBlue
-	ui.SelFgColor = gocui.ColorYellow
+	ui.BgColor = gocui.ColorBlack
+	ui.FgColor = gocui.ColorWhite
 
 	ui.SetManagerFunc(layout)
 
@@ -30,11 +36,6 @@ func NewConsole() *gocui.Gui {
 	keyBind(ui)
 	mouseBind(ui)
 
-	return ui
-}
-
-func RunConsole(ui *gocui.Gui) {
-	defer ui.Close()
 	if err := ui.MainLoop(); err != nil && err != gocui.ErrQuit {
 		log.Panicln(err)
 	}
@@ -114,8 +115,15 @@ func layout(ui *gocui.Gui) error {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
+
 		net.Title = "Net"
-		fmt.Fprint(net, "ON ==# OFF")
+		if ServerMode {
+			fmt.Fprint(net, " Server")
+		} else if MinerMode {
+			fmt.Fprint(net, " Miner")
+		} else {
+			fmt.Fprint(net, " Client")
+		}
 	}
 
 	if blockchain, err = ui.SetView("blockchain", 18, 0, maxX-1, 18); err != nil {
@@ -129,29 +137,33 @@ func layout(ui *gocui.Gui) error {
 		printBlockchain(ui)
 	}
 
-	if data, err = ui.SetView("data", 0, 19, maxX-16, 21); err != nil {
-		if err != gocui.ErrUnknownView {
-			return err
+	if !MinerMode {
+		if data, err = ui.SetView("data", 0, 19, maxX-16, 21); err != nil {
+			if err != gocui.ErrUnknownView {
+				return err
+			}
+
+			data.Title = "NewData"
+			data.Editable = true
 		}
 
-		data.Title = "NewData"
-		data.Editable = true
+		if addButton, err = ui.SetView("add", maxX-15, 19, maxX-1, 21); err != nil {
+			if err != gocui.ErrUnknownView {
+				return err
+			}
+
+			fmt.Fprintln(addButton, "     Add")
+		}
 	}
 
-	if addButton, err = ui.SetView("add", maxX-15, 19, maxX-1, 21); err != nil {
-		if err != gocui.ErrUnknownView {
-			return err
+	if MinerMode {
+		if synchButton, err = ui.SetView("sync", maxX-15, 22, maxX-1, 24); err != nil {
+			if err != gocui.ErrUnknownView {
+				return err
+			}
+
+			fmt.Fprintln(synchButton, "    Synch")
 		}
-
-		fmt.Fprintln(addButton, "     Add")
-	}
-
-	if synchButton, err = ui.SetView("sync", maxX-15, 22, maxX-1, 24); err != nil {
-		if err != gocui.ErrUnknownView {
-			return err
-		}
-
-		fmt.Fprintln(synchButton, "    Synch")
 	}
 
 	if quitButton, err = ui.SetView("quit", 0, 22, 14, 24); err != nil {
@@ -190,7 +202,7 @@ func printBlockchain(ui *gocui.Gui) {
 	printTime(ui)
 }
 
-func SetNet(status bool, ui *gocui.Gui) {
+func SetNet(status bool) {
 	v, err := ui.View("net")
 	if err != nil {
 		log.Println(err)
@@ -201,10 +213,14 @@ func SetNet(status bool, ui *gocui.Gui) {
 
 	if status {
 		v.Clear()
-		fmt.Fprint(v, "ON #== OFF")
+		v.BgColor = gocui.ColorYellow
+		v.FgColor = gocui.ColorBlack
+		fmt.Fprint(v, " Server")
 	} else {
 		v.Clear()
-		fmt.Fprint(v, "ON ==# OFF")
+		v.BgColor = gocui.ColorBlack
+		v.FgColor = gocui.ColorWhite
+		fmt.Fprint(v, " Server")
 	}
 }
 
@@ -270,22 +286,29 @@ func synchBlockChain(ui *gocui.Gui, v *gocui.View) error {
 }
 
 func addBlock(ui *gocui.Gui, v *gocui.View) error {
-
 	data, _ := ui.View("data")
 
-	if len(data.Buffer()) <= 0 {
-		log.Println("the buffer is empty")
-		return nil
+	if ServerMode {
+		if len(data.Buffer()) <= 0 {
+			log.Println("the buffer is empty")
+			return nil
+		}
+
+		chain.addBlock(strings.TrimSpace(data.Buffer()))
+
+		synchBlockChain(ui, v)
+
+		data.Clear()
+		data.SetCursor(0, 0)
+	} else {
+		msg, err := makeMsg(ADD, []byte(strings.TrimSpace(data.Buffer())), []byte{})
+		if err != nil {
+			log.Printf("add error: %+v\n", err)
+			return err
+		}
+		nc.Publish(ServerChannel, msg)
+		data.Clear()
 	}
-
-	chain.addBlock(Data{
-		"data": strings.TrimSpace(data.Buffer()),
-	})
-
-	synchBlockChain(ui, v)
-
-	data.Clear()
-	data.SetCursor(0, 0)
 
 	return nil
 }

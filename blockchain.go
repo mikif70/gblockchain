@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 )
 
 type Chain []Block
@@ -22,9 +23,13 @@ func (c *Chain) firstBlock() Block {
 	return (*c)[0]
 }
 
-func (c *Chain) addBlock(data Data) {
-	newBlock := MineBlock(c.lastBlock(), data)
+func (c *Chain) addBlock(data string) {
+	if !ServerMode {
+
+	}
+	newBlock, _ := MineBlock(c.lastBlock(), []byte(data))
 	*c = append(*c, newBlock)
+
 }
 
 func (c *Chain) replaceChain(chain Chain) {
@@ -44,6 +49,7 @@ func isValidChain(c *Chain) bool {
 	firstBlock, _ := json.Marshal(c.firstBlock())
 
 	if string(genesis) != string(firstBlock) {
+		log.Printf("genesis not found: %+v\n", string(firstBlock))
 		return false
 	}
 
@@ -53,15 +59,18 @@ func isValidChain(c *Chain) bool {
 		lastDifficulty := (*c)[i-1].Difficulty
 
 		if string(block.LastHash) != string(aLastHash) {
+			log.Printf("invalid lasthash: %s != %s", string(block.LastHash[:8]), string(aLastHash[:8]))
 			return false
 		}
 
 		validateHash := cryptoHash(&block)
 		if string(block.Hash) != string(validateHash) {
+			log.Printf("invalid hash: %s != %s", string(block.Hash[:8]), string(validateHash[:8]))
 			return false
 		}
 
 		if (lastDifficulty - block.Difficulty) > 1 {
+			log.Printf("invalid difficulty: %d != %d", lastDifficulty, block.Difficulty)
 			return false
 		}
 	}

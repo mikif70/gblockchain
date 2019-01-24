@@ -2,6 +2,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -11,13 +12,14 @@ import (
 )
 
 var (
-	chain   *Chain
-	running = true
+	chain *Chain
 )
 
 func main() {
 
-	fs, err := os.OpenFile("./chain.log", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
+	flag.Parse()
+
+	fs, err := os.OpenFile(LogFilename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
 	if err != nil {
 		fmt.Println("Log file error: ", err.Error())
 		os.Exit(-4)
@@ -26,27 +28,21 @@ func main() {
 
 	log.SetOutput(fs)
 
-	genesis := Genesis()
-
-	fmt.Printf("Genesis: %+v\n", genesis)
-
-	data := Data{
-		"test": "test",
-	}
-
-	block := MineBlock(genesis, data)
-
-	fmt.Printf("%+v\n", block)
+	data := "first block"
 
 	chain = NewChain()
-	fmt.Printf("chain: %+v\n", chain)
-
 	chain.addBlock(data)
-	fmt.Printf("newChain: %+v\n", chain)
 
-	ui := NewConsole()
+	NatsConnect()
+	defer nc.Close()
+	if ServerMode {
+		subs, err = nc.QueueSubscribe(ServerChannel, ServerQueue, handleServerMsg)
+	} else if MinerMode {
+		subs, err = nc.Subscribe(MinerChannel, handleMinerMsg)
+	} else {
+		subs, err = nc.Subscribe(ClientChannel, handleClientMsg)
+	}
+	defer subs.Unsubscribe()
 
-	go NewListener(ui)
-
-	RunConsole(ui)
+	RunConsole()
 }

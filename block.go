@@ -4,12 +4,15 @@ import (
 	//	"bytes"
 	//	"encoding/binary"
 	//	"encoding/hex"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 )
 
-type Data map[string]interface{}
+var (
+	Found bool
+)
 
 type Block struct {
 	Timestamp  int    `json:"timestamp"`
@@ -17,10 +20,10 @@ type Block struct {
 	Hash       []byte `json:"hash"`
 	Nonce      int    `json:"nonce"`
 	Difficulty int    `json:"difficulty"`
-	Data       Data   `json:"data"`
+	Data       []byte `json:"data"`
 }
 
-func NewBlock(timestamp int, lastHash []byte, data Data, nonce int, difficulty int) Block {
+func NewBlock(timestamp int, lastHash []byte, data []byte, nonce int, difficulty int) Block {
 	return Block{
 		Timestamp:  timestamp,
 		LastHash:   lastHash,
@@ -37,7 +40,7 @@ func Genesis() Block {
 	return genesis
 }
 
-func MineBlock(last Block, data Data) Block {
+func MineBlock(last Block, data []byte) (Block, error) {
 	var block Block
 	var hash []byte
 	var lastHash = last.Hash
@@ -46,19 +49,23 @@ func MineBlock(last Block, data Data) Block {
 	var timestamp int
 
 	for !isHashValid(hash, difficulty) {
-		nonce += 1
-		timestamp = int(time.Now().Unix())
-		difficulty = AdjustDifficulty(&last, timestamp)
-		block = NewBlock(int(timestamp), lastHash, data, nonce, difficulty)
-		hash = cryptoHash(&block)
-		if DEBUG {
-			fmt.Printf("hash: %d - %d - %+v\n", nonce, timestamp, hash)
+		if !Found {
+			nonce += 1
+			timestamp = int(time.Now().Unix())
+			difficulty = AdjustDifficulty(&last, timestamp)
+			block = NewBlock(int(timestamp), lastHash, []byte(data), nonce, difficulty)
+			hash = cryptoHash(&block)
+			if DEBUG {
+				fmt.Printf("hash: %d - %d - %+v\n", nonce, timestamp, hash)
+			}
+		} else {
+			return Block{}, errors.New("found " + string(lastHash[:8]))
 		}
 	}
 
 	block.Hash = hash
 
-	return block
+	return block, nil
 }
 
 func AdjustDifficulty(last *Block, timestamp int) int {
@@ -77,10 +84,10 @@ func AdjustDifficulty(last *Block, timestamp int) int {
 	difference = (timestamp - last.Timestamp) * 1000
 
 	if DEBUG {
-		fmt.Printf("difference %+v vs %d = %+v\n", difference, MINE_RATE, (difference - MINE_RATE))
+		fmt.Printf("difference %+v vs %d = %+v\n", difference, MineRate, (difference - MineRate))
 	}
 
-	if difference > MINE_RATE {
+	if difference > MineRate {
 		return (difficulty - 1)
 	}
 
