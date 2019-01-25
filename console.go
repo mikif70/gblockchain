@@ -178,6 +178,9 @@ func layout(ui *gocui.Gui) error {
 }
 
 func printBlockchain(ui *gocui.Gui) {
+	if ui == nil {
+		return
+	}
 	v, err := ui.View("blockchain")
 
 	if err != nil {
@@ -219,12 +222,12 @@ func setNet(status bool) {
 		v.Clear()
 		v.BgColor = gocui.ColorYellow
 		v.FgColor = gocui.ColorBlack
-		fmt.Fprint(v, " Server")
+		fmt.Fprint(v, " Miner")
 	} else {
 		v.Clear()
 		v.BgColor = gocui.ColorBlack
 		v.FgColor = gocui.ColorWhite
-		fmt.Fprint(v, " Server")
+		fmt.Fprint(v, " Miner")
 	}
 }
 

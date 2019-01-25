@@ -4,9 +4,7 @@ import (
 	//	"bytes"
 	//	"encoding/binary"
 	//	"encoding/hex"
-	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 )
@@ -45,36 +43,6 @@ func Genesis() Block {
 	genesis := NewBlock(GENESIS_DATA.Timestamp, GENESIS_DATA.LastHash, GENESIS_DATA.Data, GENESIS_DATA.Nonce, INITIAL_DIFFICULTY)
 	genesis.Hash = cryptoHash(&genesis)
 	return genesis
-}
-
-func MineBlock(last Block, data []byte) (Block, error) {
-	var block Block
-	var hash []byte
-	var lastHash = last.Hash
-	var difficulty = last.Difficulty
-	var nonce = 0
-	var timestamp int
-
-	for !isHashValid(hash, difficulty) {
-		if !Found {
-			nonce += 1
-			timestamp = int(time.Now().Unix())
-			difficulty = AdjustDifficulty(&last, timestamp)
-			block = NewBlock(int(timestamp), lastHash, []byte(data), nonce, difficulty)
-			hash = cryptoHash(&block)
-			log.Printf("Found: %t - %s: %d => %x\n", Found, data, nonce, hash[0:4])
-			if DEBUG {
-				fmt.Printf("hash: %d - %d - %+v\n", nonce, timestamp, hash)
-			}
-		} else {
-			log.Printf("already found %x - mynonce %d ", hash[:4], nonce)
-			return Block{}, errors.New(fmt.Sprintf("already found %x - mynonce %d ", hash[:4], nonce))
-		}
-	}
-
-	block.Hash = hash
-
-	return block, nil
 }
 
 func AdjustDifficulty(last *Block, timestamp int) int {
