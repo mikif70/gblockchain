@@ -37,8 +37,10 @@ func (c *Chain) replaceChain(chain Chain) {
 		return
 	}
 
-	if !isValidChain(&chain) {
-		return
+	if ServerMode {
+		if !isValidChain(&chain) {
+			return
+		}
 	}
 
 	(*c) = chain
@@ -49,17 +51,20 @@ func isValidChain(c *Chain) bool {
 	firstBlock, _ := json.Marshal(c.firstBlock())
 
 	if string(genesis) != string(firstBlock) {
-		log.Printf("genesis not found: %+v\n", string(firstBlock))
+		log.Printf("genesis not found: first: %+v - genesis: %+v\n", string(firstBlock), string(genesis))
 		return false
 	}
 
 	for i := 1; i < len(*c); i++ {
 		block := (*c)[i]
-		aLastHash := (*c)[i-1].LastHash
+		aLastHash := (*c)[i-1].Hash
 		lastDifficulty := (*c)[i-1].Difficulty
 
+		log.Printf("%d: %s\n", i, string(block.Data))
+		log.Printf("%d - 1: %s - %v\n", i, string((*c)[i-1].Data), (*c)[i-1].LastHash)
+
 		if string(block.LastHash) != string(aLastHash) {
-			log.Printf("invalid lasthash: %s != %s", string(block.LastHash[:8]), string(aLastHash[:8]))
+			log.Printf("invalid lasthash %d: %v != %v", i, block.LastHash[:8], aLastHash[:8])
 			return false
 		}
 

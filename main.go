@@ -12,7 +12,10 @@ import (
 )
 
 var (
-	chain *Chain
+	chain   *Chain
+	myID    string
+	clients map[string]bool
+	miners  map[string]bool
 )
 
 func main() {
@@ -28,21 +31,25 @@ func main() {
 
 	log.SetOutput(fs)
 
-	data := "first block"
+	if ServerMode {
+		data := "first block"
+		chain = NewChain()
+		chain.addBlock(data)
+	}
 
-	chain = NewChain()
-	chain.addBlock(data)
-
-	NatsConnect()
+	natsConnect()
 	defer nc.Close()
 	if ServerMode {
 		subs, err = nc.QueueSubscribe(ServerChannel, ServerQueue, handleServerMsg)
 	} else if MinerMode {
+		myID, _ = newUUID()
 		subs, err = nc.Subscribe(MinerChannel, handleMinerMsg)
+		sendID()
 	} else {
 		subs, err = nc.Subscribe(ClientChannel, handleClientMsg)
+		sendID()
 	}
 	defer subs.Unsubscribe()
 
-	RunConsole()
+	runConsole()
 }

@@ -6,12 +6,19 @@ import (
 	//	"encoding/hex"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 )
 
 var (
-	Found bool
+	Found        bool
+	GENESIS_DATA = Block{
+		LastHash:  []byte{00, 00, 00, 00, 00, 00, 00, 00},
+		Data:      []byte("genesis"),
+		Timestamp: int(time.Now().Unix()),
+		Nonce:     0,
+	}
 )
 
 type Block struct {
@@ -35,7 +42,7 @@ func NewBlock(timestamp int, lastHash []byte, data []byte, nonce int, difficulty
 }
 
 func Genesis() Block {
-	genesis := NewBlock(int(time.Now().Unix()), GENESIS_DATA.LastHash, GENESIS_DATA.Data, 0, INITIAL_DIFFICULTY)
+	genesis := NewBlock(GENESIS_DATA.Timestamp, GENESIS_DATA.LastHash, GENESIS_DATA.Data, GENESIS_DATA.Nonce, INITIAL_DIFFICULTY)
 	genesis.Hash = cryptoHash(&genesis)
 	return genesis
 }
@@ -59,7 +66,8 @@ func MineBlock(last Block, data []byte) (Block, error) {
 				fmt.Printf("hash: %d - %d - %+v\n", nonce, timestamp, hash)
 			}
 		} else {
-			return Block{}, errors.New("found " + string(lastHash[:8]))
+			log.Printf("already found %s - mynonce %d ", string(lastHash[:8]), nonce)
+			return Block{}, errors.New(fmt.Sprintf("already found %s - mynonce %d ", string(lastHash[:8]), nonce))
 		}
 	}
 

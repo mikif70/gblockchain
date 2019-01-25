@@ -16,7 +16,7 @@ var (
 	ui *gocui.Gui
 )
 
-func RunConsole() {
+func runConsole() {
 	var err error
 
 	ui, err = gocui.NewGui(gocui.OutputNormal)
@@ -72,7 +72,7 @@ func mouseBind(ui *gocui.Gui) {
 
 func layout(ui *gocui.Gui) error {
 	var difficulty, blocks, blockchain, data, net *gocui.View
-	var addButton, synchButton, quitButton *gocui.View
+	var addButton, idButton, quitButton *gocui.View
 	var err error
 	maxX, _ := ui.Size()
 
@@ -157,16 +157,16 @@ func layout(ui *gocui.Gui) error {
 	}
 
 	if MinerMode {
-		if synchButton, err = ui.SetView("sync", maxX-15, 22, maxX-1, 24); err != nil {
+		if idButton, err = ui.SetView("id", 0, 19, 42, 21); err != nil {
 			if err != gocui.ErrUnknownView {
 				return err
 			}
 
-			fmt.Fprintln(synchButton, "    Synch")
+			fmt.Fprintf(idButton, "id: %s\n", myID)
 		}
 	}
 
-	if quitButton, err = ui.SetView("quit", 0, 22, 14, 24); err != nil {
+	if quitButton, err = ui.SetView("quit", maxX-15, 22, maxX-1, 24); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
@@ -185,6 +185,10 @@ func printBlockchain(ui *gocui.Gui) {
 	}
 	v.Clear()
 
+	if chain == nil {
+		return
+	}
+
 	for i := range *chain {
 		fmt.Fprintf(v, " %d %x %x %04d %06d %+v \n",
 			(*chain)[i].Timestamp,
@@ -192,7 +196,7 @@ func printBlockchain(ui *gocui.Gui) {
 			string((*chain)[i].Hash[0:4]),
 			(*chain)[i].Difficulty,
 			(*chain)[i].Nonce,
-			(*chain)[i].Data,
+			string((*chain)[i].Data),
 		)
 	}
 	printDifficulty(ui)
@@ -202,7 +206,7 @@ func printBlockchain(ui *gocui.Gui) {
 	printTime(ui)
 }
 
-func SetNet(status bool) {
+func setNet(status bool) {
 	v, err := ui.View("net")
 	if err != nil {
 		log.Println(err)
@@ -288,27 +292,14 @@ func synchBlockChain(ui *gocui.Gui, v *gocui.View) error {
 func addBlock(ui *gocui.Gui, v *gocui.View) error {
 	data, _ := ui.View("data")
 
-	if ServerMode {
-		if len(data.Buffer()) <= 0 {
-			log.Println("the buffer is empty")
-			return nil
-		}
-
-		chain.addBlock(strings.TrimSpace(data.Buffer()))
-
-		synchBlockChain(ui, v)
-
-		data.Clear()
-		data.SetCursor(0, 0)
-	} else {
-		msg, err := makeMsg(ADD, []byte(strings.TrimSpace(data.Buffer())), []byte{})
-		if err != nil {
-			log.Printf("add error: %+v\n", err)
-			return err
-		}
-		nc.Publish(ServerChannel, msg)
-		data.Clear()
+	msg, err := makeMsg(ADD, []byte(strings.TrimSpace(data.Buffer())), []byte{})
+	if err != nil {
+		log.Printf("add error: %+v\n", err)
+		return err
 	}
+	nc.Publish(ServerChannel, msg)
+	data.Clear()
+	data.SetCursor(0, 0)
 
 	return nil
 }
