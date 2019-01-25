@@ -33,11 +33,12 @@ func (c *Chain) addBlock(data string) {
 }
 
 func (c *Chain) replaceChain(chain Chain) {
-	if len(chain) <= len(*c) {
-		return
-	}
 
 	if ServerMode {
+		if len(chain) <= len(*c) {
+			return
+		}
+
 		if !isValidChain(&chain) {
 			return
 		}
@@ -60,17 +61,17 @@ func isValidChain(c *Chain) bool {
 		aLastHash := (*c)[i-1].Hash
 		lastDifficulty := (*c)[i-1].Difficulty
 
-		log.Printf("%d: %s\n", i, string(block.Data))
-		log.Printf("%d - 1: %s - %v\n", i, string((*c)[i-1].Data), (*c)[i-1].LastHash)
+		log.Printf("check %d: %s\n", i, string(block.Data))
+		log.Printf("check %d - 1: %s - %x\n", i, string((*c)[i-1].Data), (*c)[i-1].LastHash[:4])
 
 		if string(block.LastHash) != string(aLastHash) {
-			log.Printf("invalid lasthash %d: %v != %v", i, block.LastHash[:8], aLastHash[:8])
+			log.Printf("invalid lasthash %d: %x != %x", i, block.LastHash[:4], aLastHash[:4])
 			return false
 		}
 
 		validateHash := cryptoHash(&block)
 		if string(block.Hash) != string(validateHash) {
-			log.Printf("invalid hash: %s != %s", string(block.Hash[:8]), string(validateHash[:8]))
+			log.Printf("invalid hash: %x != %x", block.Hash[:4], validateHash[:4])
 			return false
 		}
 

@@ -31,11 +31,7 @@ func main() {
 
 	log.SetOutput(fs)
 
-	if ServerMode {
-		data := "first block"
-		chain = NewChain()
-		chain.addBlock(data)
-	}
+	chain = NewChain()
 
 	natsConnect()
 	defer nc.Close()

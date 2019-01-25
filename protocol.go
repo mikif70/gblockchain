@@ -2,8 +2,9 @@
 package main
 
 import (
+	//	"encoding/gob"
 	"encoding/json"
-	"log"
+	//	"log"
 )
 
 var (
@@ -28,6 +29,6 @@ func makeMsg(cmd string, data []byte, msg []byte) ([]byte, error) {
 	}
 
 	jmsg, err := json.Marshal(mymsg)
-	log.Printf("jmsg: %+v\n", string(jmsg))
+	//	log.Printf("jmsg: %+v\n", string(jmsg))
 	return jmsg, err
 }

@@ -236,6 +236,10 @@ func printTime(ui *gocui.Gui) {
 	}
 	v.Clear()
 
+	if len(*chain) <= 1 {
+		return
+	}
+
 	fmt.Fprintf(v, " %d sec", ((*chain)[len(*chain)-1].Timestamp - (*chain)[len(*chain)-2].Timestamp))
 }
 

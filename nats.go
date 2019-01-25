@@ -10,9 +10,8 @@ import (
 )
 
 var (
-	nc     *nats.Conn
-	subs   *nats.Subscription
-	server *nats.Subscription
+	nc   *nats.Conn
+	subs *nats.Subscription
 )
 
 func natsConnect() {
@@ -25,11 +24,8 @@ func natsConnect() {
 }
 
 func sendID() {
-	if MinerMode {
-
-	} else if !ServerMode {
-
-	}
+	msg, _ := makeMsg(UPDATE, []byte(myID), []byte{})
+	nc.Publish(ServerChannel, msg)
 }
 
 func handleServerMsg(msg *nats.Msg) {
@@ -60,7 +56,7 @@ func handleServerMsg(msg *nats.Msg) {
 		json.Unmarshal(newBlockMsg.Data, &newBlock)
 
 		*chain = append(*chain, newBlock)
-		log.Printf("New Chain: %xb - %s\n", chain.lastBlock().Hash[:8], string(newBlockMsg.Msg))
+		log.Printf("New Chain: %x - %s\n", chain.lastBlock().Hash[:4], string(newBlockMsg.Msg))
 		isValid := isValidChain(chain)
 
 		if !isValid {
@@ -85,7 +81,16 @@ func handleServerMsg(msg *nats.Msg) {
 		printBlockchain(ui)
 
 		log.Printf("Found Block: %s\n", string(newBlockMsg.Msg))
+	case UPDATE:
+		jdata, err := json.Marshal(chain)
+		if err != nil {
+			log.Printf("BLOCKS ERR: %+v\n", err)
+		}
 
+		// update all clients
+		upChain, _ := makeMsg(UPDATE, jdata, []byte{})
+		nc.Publish(ClientChannel, upChain)
+		nc.Publish(MinerChannel, upChain)
 	default:
 		log.Printf("Invalid CMD: %+v\n", mymsg)
 		return
@@ -101,6 +106,7 @@ func handleClientMsg(msg *nats.Msg) {
 		json.Unmarshal(mymsg.Data, &newchain)
 		chain.replaceChain(newchain)
 		printBlockchain(ui)
+		log.Printf("Update: %x\n", newchain.lastBlock().Hash[:4])
 	default:
 	}
 }
@@ -110,27 +116,7 @@ func handleMinerMsg(msg *nats.Msg) {
 	json.Unmarshal(msg.Data, &mymsg)
 	switch mymsg.Cmd {
 	case MINE:
-		setNet(true)
-		defer setNet(false)
-		Found = false
-		last := Block{}
-		json.Unmarshal(mymsg.Msg, &last)
-		lasthash := last.LastHash
-		minedBlock, err := MineBlock(last, mymsg.Data)
-		if err != nil {
-			log.Printf("miner: %+v\n", err)
-			return
-		}
-		retval, err := json.Marshal(minedBlock)
-		if err != nil {
-			log.Printf("new block err: %+v\n", err)
-			return
-		}
-
-		newmsg, err := makeMsg(BLOCK_FOUND, retval, []byte(myID))
-
-		log.Printf("sending block: %+v\n", lasthash[:8])
-		nc.Publish(msg.Reply, newmsg)
+		go mineNewBlock(&mymsg, msg.Reply)
 	case BLOCK_FOUND:
 		Found = true
 	case UPDATE:
@@ -138,6 +124,31 @@ func handleMinerMsg(msg *nats.Msg) {
 		json.Unmarshal(mymsg.Data, &newchain)
 		chain.replaceChain(newchain)
 		printBlockchain(ui)
+		log.Printf("Update: %x\n", newchain.lastBlock().Hash[:4])
 	default:
 	}
+}
+
+func mineNewBlock(mymsg *myMsg, reply string) {
+	setNet(true)
+	defer setNet(false)
+	Found = false
+	last := Block{}
+	json.Unmarshal(mymsg.Msg, &last)
+	//		lasthash := last.LastHash
+	minedBlock, err := MineBlock(last, mymsg.Data)
+	if err != nil {
+		log.Printf("miner: %+v\n", err)
+		return
+	}
+	retval, err := json.Marshal(minedBlock)
+	if err != nil {
+		log.Printf("new block err: %+v\n", err)
+		return
+	}
+
+	newmsg, err := makeMsg(BLOCK_FOUND, retval, []byte(myID))
+
+	log.Printf("sending block: %x\n", minedBlock.Hash[:4])
+	nc.Publish(reply, newmsg)
 }

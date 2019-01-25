@@ -62,12 +62,13 @@ func MineBlock(last Block, data []byte) (Block, error) {
 			difficulty = AdjustDifficulty(&last, timestamp)
 			block = NewBlock(int(timestamp), lastHash, []byte(data), nonce, difficulty)
 			hash = cryptoHash(&block)
+			log.Printf("Found: %t - %s: %d => %x\n", Found, data, nonce, hash[0:4])
 			if DEBUG {
 				fmt.Printf("hash: %d - %d - %+v\n", nonce, timestamp, hash)
 			}
 		} else {
-			log.Printf("already found %s - mynonce %d ", string(lastHash[:8]), nonce)
-			return Block{}, errors.New(fmt.Sprintf("already found %s - mynonce %d ", string(lastHash[:8]), nonce))
+			log.Printf("already found %x - mynonce %d ", hash[:4], nonce)
+			return Block{}, errors.New(fmt.Sprintf("already found %x - mynonce %d ", hash[:4], nonce))
 		}
 	}
 
