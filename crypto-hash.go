@@ -45,6 +45,10 @@ func cryptoHash(block *Block) []byte {
 	return hash.Sum(nil)
 }
 
+func genKeyPair() string {
+	return ""
+}
+
 func newUUID() (string, error) {
 	uuid := make([]byte, 16)
 	n, err := io.ReadFull(rand.Reader, uuid)

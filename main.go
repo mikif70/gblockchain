@@ -11,6 +11,10 @@ import (
 	//	ui "github.com/gizak/termui"
 )
 
+const (
+	_Version = "0.2.0"
+)
+
 var (
 	chain   *Chain
 	myID    string
