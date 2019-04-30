@@ -1,9 +1,11 @@
 package main
 
 import (
-	"crypto/sha256"
-	//	"encoding/hex"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/sha256"
+
 	"encoding/json"
 	"fmt"
 	"io"
@@ -45,8 +47,9 @@ func cryptoHash(block *Block) []byte {
 	return hash.Sum(nil)
 }
 
-func genKeyPair() string {
-	return ""
+func genKeyPair() (*ecdsa.PrivateKey, error) {
+
+	return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 }
 
 func newUUID() (string, error) {

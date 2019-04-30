@@ -3,7 +3,7 @@ package main
 
 import (
 	"flag"
-	//	"time"
+	"time"
 )
 
 const (
@@ -18,6 +18,7 @@ var (
 	MinerMode     bool
 	LogFilename   string
 	MineRate      int
+	NatsTimeout   time.Duration
 	servers       string
 	ClientChannel = "blockchain"
 	ServerChannel = "commands"
@@ -30,5 +31,6 @@ func init() {
 	flag.BoolVar(&ServerMode, "s", false, "Server mode")
 	flag.BoolVar(&MinerMode, "m", false, "miner mode")
 	flag.IntVar(&MineRate, "t", MINE_RATE, "mine rate (msec)")
+	flag.DurationVar(&NatsTimeout, "T", time.Duration(30000*MINE_RATE)*time.Millisecond, "nats timeout (msec")
 	flag.StringVar(&servers, "S", "nats://94.32.64.100:4222, nats://94.32.64.114:4222", "nats servers")
 }

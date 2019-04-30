@@ -26,11 +26,21 @@ func handleServerMsg(msg *nats.Msg) {
 			return
 		}
 		// Send and wait the first response
-		ret, err := nc.Request(MinerChannel, newmsg, time.Duration(MineRate*2)*time.Millisecond)
+		ret, err := nc.Request(MinerChannel, newmsg, time.Duration(NatsTimeout))
+
+		if err != nil || ret == nil {
+			log.Printf("request error: %+v - %+v\n", err, ret)
+			return
+		}
 
 		// parse reply from miner
 		newBlockMsg := myMsg{}
-		json.Unmarshal(ret.Data, &newBlockMsg)
+		err = json.Unmarshal(ret.Data, &newBlockMsg)
+
+		if err != nil || newBlockMsg.Data == nil {
+			log.Printf("newBlock error: %+v - %+v\n", err, newBlockMsg)
+			return
+		}
 
 		newBlock := Block{}
 		json.Unmarshal(newBlockMsg.Data, &newBlock)

@@ -2,7 +2,8 @@
 package main
 
 import (
-	"time"
+	"crypto/ecdsa"
+	//	"time"
 )
 
 type Transaction struct {
@@ -11,15 +12,19 @@ type Transaction struct {
 	Input     *Input
 }
 
-type OutputMap map[string]int
+type OutputMap struct {
+	Recipient    int
+	SenderWallet *Wallet
+}
 
 type Input struct {
 	Timestamp int64
 	Amount    int
-	Address   string
+	Address   *ecdsa.PublicKey
 	Signature string
 }
 
+/*
 func NewTransaction(senderWallet *Wallet, recipient string, amount int) *Transaction {
 	id, err := newUUID()
 	out := createOutputMap(senderWallet, recipient, amount)
@@ -32,7 +37,9 @@ func NewTransaction(senderWallet *Wallet, recipient string, amount int) *Transac
 
 	return &transaction
 }
+*/
 
+/*
 func createInput(senderWallet *Wallet, outputMap *OutputMap) *Input {
 	input := Input{
 		Timestamp: time.Now().Unix(),
@@ -43,13 +50,15 @@ func createInput(senderWallet *Wallet, outputMap *OutputMap) *Input {
 
 	return &input
 }
+*/
 
+/*
 func createOutputMap(senderWallet *Wallet, recipient string, amount int) *OutputMap {
 
 	omap := OutputMap{}
 
-	omap[recipient] = amount
-	omap[senderWallet.PublicKey] = senderWallet.Balance - amount
+	omap.Recipient = amount
+	omap.SenderWallet.PublicKey = senderWallet.Balance - amount
 
 	return &omap
 }
@@ -58,3 +67,4 @@ func verifySignature(publicKey string, data int, signature string) bool {
 
 	return true
 }
+*/
